@@ -1,0 +1,70 @@
+fullName:
+  name: es-begins-with
+meta:
+  description: Verifies that all secret references match a begins-with-text rule on
+    the Cluster Secret Store
+spec:
+  dataInventory:
+  - group: ""
+    kind: Namespace
+    version: v1
+  objectType: ConstraintTemplate
+  policyUpdateStrategy:
+    type: INPLACE_UPDATE
+  templateType: OPAGatekeeper
+  object: |
+    apiVersion: templates.gatekeeper.sh/v1beta1
+    kind: ConstraintTemplate
+    metadata:
+      name: es-begins-with
+      annotations:
+        description: >-
+          Verifies that all secret references match a begins-with-text rule on the Cluster Secret Store
+    spec:
+      crd:
+        spec:
+          names:
+            kind: es-begins-with
+          validation:
+            openAPIV3Schema:
+              type: object
+              properties:
+                label:
+                  type: string
+                  description: >-
+                    Label to verify begins-with-text rule to be applied
+
+
+      targets:
+        - target: admission.k8s.gatekeeper.sh
+          rego: |
+            
+            package externalsecretsvalidatesecretreference
+
+            # Ensure namespace where the ExternalSecret is created has a label containing the begins-with-text rule value
+            violation[{"msg": msg}] {
+              # retrieve the namespace name of the ExternalSecret
+              namespace := input.review.object.metadata.namespace
+              # retrieve the cached namespace object that matches the ExternalSecret's namespace name
+              target := data.inventory.cluster["v1"]["Namespace"][namespace]
+              # false if the cached namespace does not have a label that matche the required label name
+              not target.metadata.labels[input.parameters.label]
+              msg := sprintf("Namespace %v not allowed to receive secrets (missing labels %v)",[namespace, input.parameters.label])
+            }
+            
+            violation[{"msg": msg}] {
+              namespace := input.review.object.metadata.namespace
+              secretrefs := input.review.object.spec.dataFrom[_].key
+              target := data.inventory.cluster["v1"]["Namespace"][namespace]
+              regex := concat("", ["^",target.metadata.labels[input.parameters.label],".*"])
+              not re_match(regex, secretrefs)
+              msg := sprintf("Data From key %v not allowed in Namespace %v",[secretrefs, namespace])
+            }
+            violation[{"msg": msg}] {
+              namespace := input.review.object.metadata.namespace
+              secretrefs := input.review.object.spec.data[_].remoteRef.key
+              target := data.inventory.cluster["v1"]["Namespace"][namespace]
+              regex := concat("", ["^",target.metadata.labels[input.parameters.label],".*"])
+              not re_match(regex, secretrefs)
+              msg := sprintf("Data key remote ref %v not allowed in namespace %v",[secretrefs, namespace])
+            }

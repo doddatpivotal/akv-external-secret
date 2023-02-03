@@ -1,0 +1,20 @@
+#@ load("@ytt:data", "data")
+---
+fullName:
+  clusterName: #@ data.values.cluster_name
+  managementClusterName: attached
+  name: es-access-by-label
+  provisionerName: attached
+spec:
+  input:
+    audit: false
+    parameters:
+      label: acme.com/es-regex
+    targetKubernetesResources:
+    - apiGroups:
+      - external-secrets.io
+      kinds:
+      - ExternalSecret
+  recipe: es-begins-with
+  recipeVersion: v1
+  type: custom-policy
