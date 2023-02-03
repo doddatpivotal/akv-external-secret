@@ -1,0 +1,18 @@
+#@data/values
+---
+resource_group: akv-demo
+location: eastus2
+cluster_name: demo-k8s-cluster
+vault_name: dpfeffer-eso-vault
+
+tmc_cluster_group: se-dpfeffer-dev
+tmc_prefix: dpfeffer
+
+ad_app_name: dpfeffer-eso
+
+
+platform_ops_namespace: platform-ops
+platform_ops_workspace: platform-ops
+
+tanzunet_user: REDACTED
+tanzunet_password: REDACTED
