@@ -1,21 +1,15 @@
 # Secure Access to KeyVault from AKS Powered by Tanzu
 
-Inspiration - https://blog.container-solutions.com/tutorial-external-secrets-with-azure-keyvault
-    Great blog introducing the integration of AKS and AzureKeyVault through External Secrets and then leveraging OPA Gatekeeper to apply policy for which namespaces can access which secrets in the key vault.
-External-Secret Azure Provider Docs - https://external-secrets.io/v0.7.2/provider/azure-key-vault/#workload-identity
-    How to leverage Azure AD Workload Identity instead of requiring AD client creds in the cluster
-Azure AD Workload Identity Quick Start - https://azure.github.io/azure-workload-identity/docs/quick-start.html#5-create-a-kubernetes-service-account
-    Walks through the new standard (via Preview) for establishing a trust between AKS and Azure AD for external service access.  Result is no creds in AKS.
-External-Secret Multi Tenancy Guide - https://external-secrets.io/v0.7.2/guides/multi-tenancy/
-    Clearly articulates how you may consider having different teams access different vaults or sections of the same vault    
+- Inspiration - https://blog.container-solutions.com/tutorial-external-secrets-with-azure-keyvault - Great blog introducing the integration of AKS and AzureKeyVault through External Secrets and then leveraging OPA Gatekeeper to apply policy for which namespaces can access which secrets in the key vault.
+- External-Secret Azure Provider Docs - https://external-secrets.io/v0.7.2/provider/azure-key-vault/#workload-identity - How to leverage Azure AD Workload Identity instead of requiring AD client creds in the cluster
+- Azure AD Workload Identity Quick Start - https://azure.github.io/azure-workload-identity/docs/quick-start.html#5-create-a-kubernetes-service-account - Walks through the new standard (via Preview) for establishing a trust between AKS and Azure AD for external service access.  Result is no creds in AKS.
+- External-Secret Multi Tenancy Guide - https://external-secrets.io/v0.7.2/guides/multi-tenancy/ - Clearly articulates how you may consider having different teams access different vaults or sections of the same vault    
 
+## Overview
+Setup Azure AKS Cluster and KeyVault leveraging Azure AD Workload Identity. Leverage Tanzu Mission Control to
 
-Setup Azure AKS Cluster and KeyVault leveraging Azure AD Workload Identity
-Leverage Tanzu Mission Control to
-    Provision External Secrets
-    Establish and enforce keyvault access constraint policies 
-
-
+- Provision External Secrets
+- Establish and enforce keyvault access constraint policies 
 
 ## Prerequisites
 
