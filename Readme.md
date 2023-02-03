@@ -66,7 +66,7 @@ az keyvault secret set --name app-3-secret-1 --vault-name $VAULT_NAME --value "a
 
 # Create an AAD application
 azwi serviceaccount create phase app --aad-application-name "$AD_APP_NAME"
-AD_APP_CLIENT_ID="$(az ad sp list --display-name "$AD_APP_NAME" --query '[0].appId' -otsv)" & echo $AD_APP_CLIENT_ID
+AD_APP_CLIENT_ID=$(az ad sp list --display-name "$AD_APP_NAME" --query '[0].appId' -otsv) & echo $AD_APP_CLIENT_ID
 
 # Grant permissions to the client to access the keyvault
 az keyvault set-policy --name "$VAULT_NAME" \
