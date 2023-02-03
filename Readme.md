@@ -6,12 +6,18 @@
 - External-Secret Multi Tenancy Guide - https://external-secrets.io/v0.7.2/guides/multi-tenancy/ - Clearly articulates how you may consider having different teams access different vaults or sections of the same vault    
 
 ## Overview
-Setup Azure AKS Cluster and KeyVault leveraging Azure AD Workload Identity. Leverage Tanzu Mission Control to
+Setup Azure AKS Cluster and KeyVault leveraging Azure AD Workload Identity. Leverage External Secerts and Tanzu Mission Control to
 
-- Provision External Secrets
-- Establish and enforce keyvault access constraint policies 
+- Create a Multi Tentant solution using External Secrets [Shared Cluster Store](https://external-secrets.io/v0.7.2/guides/multi-tenancy/#shared-clustersecretstore) model
+- Allow individual app teams to provision External Secrets.  This is constrained by the platform operators designation of the namespace begin allowed to create External Secrets and which External Secrets they are allowed to retrieve.
+
+The primary activity in this lab represents activities that the Azure Cloud Operator and Kubernetes Operator perform.  The final steps demonstrate the k8s user activities.
 
 ## Prerequisites
+
+Assumes you have already:
+- Logged in to TMC using the `tmc` cli with context set to your organization
+- Logged into Azure using the `az` cli
 
 ```bash
 brew upgrade az
@@ -37,7 +43,7 @@ TMC_PREFIX=$(yq e .tmc_prefix $PARAMS_YAML)
 PLATFORM_OPS_WORKSPACE=$TMC_PREFIX-$(yq e .platform_ops_workspace $PARAMS_YAML)
 ```
 
-## Create Azure Resources
+## Create Azure Resources (Azure Platform Operator)
 
 ```bash
 
@@ -72,7 +78,7 @@ az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --o
 
 ```
 
-## Perform TMC Activities
+## Perform TMC Activities (Kubernetes Platform Operator)
 
 ```bash
 
@@ -174,7 +180,7 @@ tmc cluster namespace create \
     --cluster-name $CLUSTER_NAME -p attached -m attached 
 ```
 
-## Create ClusterSecretStore and Trusted Access
+## Create ClusterSecretStore and Trusted Access (Mix permissions of Azure Platform Operator & Kubernetes Platform Operator)
 
 ```bash
 # Create a Kubernetes service account for use by ESO
@@ -197,7 +203,7 @@ ytt -f $PARAMS_YAML -f akv-demo-cluster-secret-store.yaml | kubectl apply -f -
 kubectl get clustersecretstore
 ```
 
-## Test Out Access
+## Test Out Access (Kubernetes User)
 
 ```bash
 # Test ability for app-1 to create an ExternalSecret
@@ -220,7 +226,7 @@ kubectl get externalsecret,secret -n app-3
 ```
 
 
-## Cleanup
+## Clean-up (Mix permissions of Azure Platform Operator & Kubernetes Platform Operator)
 
 ```bash
 tmc cluster delete $CLUSTER_NAME -m attached -p attached  --force
