@@ -59,10 +59,10 @@ OIDC_ISSUER_URL=$(az aks show --resource-group $RESOURCE_GROUP --name $CLUSTER_N
 # Create KeyVault
 az keyvault create --name $VAULT_NAME --resource-group $RESOURCE_GROUP
 
-# Populate KeyVault with secrets
-az keyvault secret set --name app-1-secret-1 --vault-name $VAULT_NAME --value "app-1-secret-1-value"
-az keyvault secret set --name app-2-secret-1 --vault-name $VAULT_NAME --value "app-2-secret-1-value"
-az keyvault secret set --name app-3-secret-1 --vault-name $VAULT_NAME --value "app-3-secret-1-value"
+# Populate Key Vault with secrets
+az keyvault secret set --name app-1--postgres972--connectionstring --vault-name $VAULT_NAME --value "app-1-secret-1-value"
+az keyvault secret set --name app-2--rabbitmq361--password --vault-name $VAULT_NAME --value "app-2-secret-1-value"
+az keyvault secret set --name app-3--gemfire912--password --vault-name $VAULT_NAME --value "app-3-secret-1-value"
 
 # Create an AAD application
 azwi serviceaccount create phase app --aad-application-name "$AD_APP_NAME"
@@ -209,7 +209,7 @@ kubectl get clustersecretstore
 # Test ability for app-1 to create an ExternalSecret
 ytt -f $PARAMS_YAML -f app-1-good-secret.yaml | kubectl apply -f -
 kubectl get externalsecret,secret -n app-1
-kubectl get secret app-1-secret-1 -n app-1 -ojsonpath="{.data.value}" | base64 --decode
+kubectl get secret secret/app-1--postgres972--connectionstring -n app-1 -ojsonpath="{.data.value}" | base64 --decode
 
 # Test usecase where app-1 is blocked from accessing app-2 secrets
 ytt -f $PARAMS_YAML -f app-1-bad-secret.yaml | kubectl apply -f -
@@ -218,7 +218,7 @@ kubectl get externalsecret,secret -n app-1
 # Test ability for app-2 to create an ExternalSecret
 ytt -f $PARAMS_YAML -f app-2-good-secret.yaml | kubectl apply -f -
 kubectl get externalsecret,secret -n app-2
-kubectl get secret app-2-secret-1 -n app-2 -ojsonpath="{.data.value}" | base64 --decode
+kubectl get secret app-2--rabbitmq361--password -n app-2 -ojsonpath="{.data.value}" | base64 --decode
 
 # Test failure to create external secret when label is not on the namespace
 ytt -f $PARAMS_YAML -f app-3-good-secret.yaml | kubectl apply -f -
