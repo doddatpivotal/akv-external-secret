@@ -21,7 +21,6 @@ Assumes you have already:
 
 ```bash
 brew upgrade az
-brew install Azure/azure-workload-identity/azwi
 
 # Add feature preview flag for Workload Identity
 az feature register --namespace "Microsoft.ContainerService" --name "EnableWorkloadIdentityPreview"
@@ -65,8 +64,8 @@ az keyvault secret set --name app-2--rabbitmq361--password --vault-name $VAULT_N
 az keyvault secret set --name app-3--gemfire912--password --vault-name $VAULT_NAME --value "app-3-secret-1-value"
 
 # Create an AAD application
-azwi serviceaccount create phase app --aad-application-name "$AD_APP_NAME"
-AD_APP_CLIENT_ID=$(az ad sp list --display-name "$AD_APP_NAME" --query '[0].appId' -otsv) & echo $AD_APP_CLIENT_ID
+az ad sp create-for-rbac --name "$AD_APP_NAME"
+AD_APP_CLIENT_ID=$(az ad sp list --display-name "$AD_APP_NAME" --query '[0].appId' -otsv) && echo $AD_APP_CLIENT_ID
 
 # Grant permissions to the client to access the keyvault
 az keyvault set-policy --name "$VAULT_NAME" \
@@ -184,17 +183,16 @@ tmc cluster namespace create \
 
 ```bash
 # Create a Kubernetes service account for use by ESO
-azwi serviceaccount create phase sa \
-  --aad-application-name "$AD_APP_NAME" \
-  --service-account-namespace "$PLATFORM_OPS_NAMESPACE" \
-  --service-account-name "workload-identity-sa"
-
+kubectl create serviceaccount workload-identity-sa --namespace $PLATFORM_OPS_NAMESPACE
+kubectl label serviceaccount workload-identity-sa --namespace $PLATFORM_OPS_NAMESPACE azure.workload.identity/use=true
+kubectl annotate serviceaccount workload-identity-sa --namespace $PLATFORM_OPS_NAMESPACE azure.workload.identity/client-id=$AD_APP_CLIENT_ID
+TENANT_ID=$(az account show --query tenantId | tr -d \") && echo $TENANT_ID
+kubectl annotate serviceaccount workload-identity-sa --namespace $PLATFORM_OPS_NAMESPACE azure.workload.identity/tenant-id=$TENANT_ID
+                  │
 # Establish federated identity credential between the identity and the service account issuer & subject
-azwi serviceaccount create phase federated-identity \
-  --aad-application-name "$AD_APP_NAME" \
-  --service-account-namespace "$PLATFORM_OPS_NAMESPACE" \
-  --service-account-name "workload-identity-sa" \
-  --service-account-issuer-url "$OIDC_ISSUER_URL"
+AD_APP_OBJECT_ID="$(az ad app show --id $AD_APP_CLIENT_ID --query id -otsv)" && echo $AD_APP_OBJECT_ID
+ytt -f azure-fed-credential-params.yaml -f $PARAMS_YAML -v oidc_issuer_url=$OIDC_ISSUER_URL -ojson > generated/fed-credential-params.json
+az ad app federated-credential create --id $AD_APP_OBJECT_ID --parameters @generated/fed-credential-params.json
 
 # Create the cluster secret store referencing the service account
 ytt -f $PARAMS_YAML -f akv-demo-cluster-secret-store.yaml | kubectl apply -f -
