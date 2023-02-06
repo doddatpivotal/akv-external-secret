@@ -1,23 +1,35 @@
 # Secure Access to Azure Key Vault from AKS Powered by Tanzu
 
-- Inspiration - https://blog.container-solutions.com/tutorial-external-secrets-with-azure-keyvault - Great blog introducing the integration of AKS and Azure Key Vault through External Secrets and then leveraging OPA Gatekeeper to apply policy for which namespaces can access which secrets in the key vault.
-- External-Secret Azure Provider Docs - https://external-secrets.io/v0.7.2/provider/azure-key-vault/#workload-identity - How to leverage Azure AD Workload Identity instead of requiring AD client creds in the cluster
-- Azure AD Workload Identity Quick Start - https://azure.github.io/azure-workload-identity/docs/quick-start.html#5-create-a-kubernetes-service-account - Walks through the new standard (via Preview) for establishing a trust between AKS and Azure AD for external service access.  Result is no creds in AKS.
-- External-Secret Multi Tenancy Guide - https://external-secrets.io/v0.7.2/guides/multi-tenancy/ - Clearly articulates how you may consider having different teams access different vaults or sections of the same vault    
+The following repo is a companion to the blog [Deliver Secure Access to Azure Key Vault from AKS Powered by Tanzu](https://dodd-pfeffer.medium.com/deliver-secure-access-to-azure-key-vault-from-aks-powered-by-tanzu-dfdfc98138c5).
 
 ## Overview
+
+![High Level Overview](docs/high-level-summary.png)
+
 Setup Azure AKS Cluster and Key Vault leveraging Azure AD Workload Identity. Leverage External Secerts and Tanzu Mission Control to
 
 - Create a Multi Tentant solution using External Secrets [Shared Cluster Store](https://external-secrets.io/v0.7.2/guides/multi-tenancy/#shared-clustersecretstore) model
 - Allow individual app teams to provision External Secrets.  This is constrained by the platform operators designation of the namespace begin allowed to create External Secrets and which External Secrets they are allowed to retrieve.
+- Leverage Tanzu Mission Control for to power Kubernetes Operations
 
 The primary activity in this lab represents activities that the Azure Cloud Operator and Kubernetes Operator perform.  The final steps demonstrate the k8s user activities.
+
+## References
+
+- Inspiration - https://blog.container-solutions.com/tutorial-external-secrets-with-azure-keyvault - Great blog introducing the integration of AKS and Azure Key Vault through External Secrets and then leveraging OPA Gatekeeper to apply policy for which namespaces can access which secrets in the key vault.
+- External-Secret Azure Provider Docs - https://external-secrets.io/v0.7.2/provider/azure-key-vault/#workload-identity - How to leverage Azure AD Workload Identity instead of requiring AD client creds in the cluster
+- Azure AD Workload Identity Quick Start - https://azure.github.io/azure-workload-identity/docs/quick-start.html#5-create-a-kubernetes-service-account - Walks through the new standard (via Preview) for establishing a trust between AKS and Azure AD for external service access.  Result is no creds in AKS.
+- External-Secret Multi Tenancy Guide - https://external-secrets.io/v0.7.2/guides/multi-tenancy/ - Clearly articulates how you may consider having different teams access different vaults or sections of the same vault    
 
 ## Prerequisites
 
 Assumes you have already:
 - Logged in to TMC using the `tmc` cli with context set to your organization
 - Logged into Azure using the `az` cli
+- Have active Tanzu Net credentials
+- Have a Tanzu Mission Control subscription
+- Running on a Mac (you can adjust the commands otherwise for Windows or Linux)
+- Copied `local-config/params-REDACTED.yaml` and updated for your environment details
 
 ```bash
 brew upgrade az
@@ -41,6 +53,8 @@ PLATFORM_OPS_NAMESPACE=$(yq e .platform_ops_namespace $PARAMS_YAML)
 TMC_PREFIX=$(yq e .tmc_prefix $PARAMS_YAML)
 PLATFORM_OPS_WORKSPACE=$TMC_PREFIX-$(yq e .platform_ops_workspace $PARAMS_YAML)
 ```
+
+![Detail References](docs/detailed-references.png)
 
 ## Create Azure Resources (Azure Platform Operator)
 
@@ -78,6 +92,8 @@ az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --o
 ```
 
 ## Perform TMC Activities (Kubernetes Platform Operator)
+
+![TMC Interactions](docs/tmc-interactions.png)
 
 ```bash
 
