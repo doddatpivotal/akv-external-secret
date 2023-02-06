@@ -1,12 +1,12 @@
-# Secure Access to KeyVault from AKS Powered by Tanzu
+# Secure Access to Azure Key Vault from AKS Powered by Tanzu
 
-- Inspiration - https://blog.container-solutions.com/tutorial-external-secrets-with-azure-keyvault - Great blog introducing the integration of AKS and AzureKeyVault through External Secrets and then leveraging OPA Gatekeeper to apply policy for which namespaces can access which secrets in the key vault.
+- Inspiration - https://blog.container-solutions.com/tutorial-external-secrets-with-azure-keyvault - Great blog introducing the integration of AKS and Azure Key Vault through External Secrets and then leveraging OPA Gatekeeper to apply policy for which namespaces can access which secrets in the key vault.
 - External-Secret Azure Provider Docs - https://external-secrets.io/v0.7.2/provider/azure-key-vault/#workload-identity - How to leverage Azure AD Workload Identity instead of requiring AD client creds in the cluster
 - Azure AD Workload Identity Quick Start - https://azure.github.io/azure-workload-identity/docs/quick-start.html#5-create-a-kubernetes-service-account - Walks through the new standard (via Preview) for establishing a trust between AKS and Azure AD for external service access.  Result is no creds in AKS.
 - External-Secret Multi Tenancy Guide - https://external-secrets.io/v0.7.2/guides/multi-tenancy/ - Clearly articulates how you may consider having different teams access different vaults or sections of the same vault    
 
 ## Overview
-Setup Azure AKS Cluster and KeyVault leveraging Azure AD Workload Identity. Leverage External Secerts and Tanzu Mission Control to
+Setup Azure AKS Cluster and Key Vault leveraging Azure AD Workload Identity. Leverage External Secerts and Tanzu Mission Control to
 
 - Create a Multi Tentant solution using External Secrets [Shared Cluster Store](https://external-secrets.io/v0.7.2/guides/multi-tenancy/#shared-clustersecretstore) model
 - Allow individual app teams to provision External Secrets.  This is constrained by the platform operators designation of the namespace begin allowed to create External Secrets and which External Secrets they are allowed to retrieve.
@@ -55,7 +55,7 @@ az aks create --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --node-count
 # Rerive the the OIDC issuer URL of the newly created cluster
 OIDC_ISSUER_URL=$(az aks show --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --query "oidcIssuerProfile.issuerUrl" -otsv) && echo $OIDC_ISSUER_URL
 
-# Create KeyVault
+# Create Key Vault
 az keyvault create --name $VAULT_NAME --resource-group $RESOURCE_GROUP
 
 # Populate Key Vault with secrets
@@ -67,7 +67,7 @@ az keyvault secret set --name app-3--gemfire912--password --vault-name $VAULT_NA
 az ad sp create-for-rbac --name "$AD_APP_NAME"
 AD_APP_CLIENT_ID=$(az ad sp list --display-name "$AD_APP_NAME" --query '[0].appId' -otsv) && echo $AD_APP_CLIENT_ID
 
-# Grant permissions to the client to access the keyvault
+# Grant permissions to the client to access the key vault
 az keyvault set-policy --name "$VAULT_NAME" \
   --secret-permissions get \
   --spn "$AD_APP_CLIENT_ID"
@@ -87,8 +87,8 @@ mkdir -p generated/tmc
 tmc cluster attach \
     --name $CLUSTER_NAME \
     --cluster-group $TMC_CLUSTER_GROUP \
-    --output /tmp/tmc-$CLUSTER_NAME-cluster.yaml
-kubectl apply -f /tmp/tmc-$CLUSTER_NAME-cluster.yaml
+    --output generated/tmc/tmc-$CLUSTER_NAME-cluster.yaml
+kubectl apply -f generated/tmc/tmc-$CLUSTER_NAME-cluster.yaml
 # Wait for status = TRUE
 tmc cluster get $CLUSTER_NAME \
     -p attached -m attached \
@@ -227,7 +227,7 @@ kubectl get externalsecret,secret -n app-3
 ## Clean-up (Mix permissions of Azure Platform Operator & Kubernetes Platform Operator)
 
 ```bash
-tmc cluster delete $CLUSTER_NAME -m attached -p attached  --force
+tmc cluster delete $CLUSTER_NAME -m attached -p attached --force
 tmc workspace delete $PLATFORM_OPS_WORKSPACE
 tmc workspace delete $TMC_PREFIX-app-1
 tmc workspace delete $TMC_PREFIX-app-2
@@ -239,5 +239,4 @@ az ad app delete --id $AD_APP_CLIENT_ID
 az keyvault delete --name $VAULT_NAME
 az keyvault purge --name $VAULT_NAME
 az group delete --name $RESOURCE_GROUP -y
-
 ```

@@ -56,7 +56,7 @@ spec:
               namespace := input.review.object.metadata.namespace
               secretrefs := input.review.object.spec.dataFrom[_].key
               target := data.inventory.cluster["v1"]["Namespace"][namespace]
-              regex := concat("", ["^",target.metadata.labels[input.parameters.label],".*"])
+              regex := concat("", ["^",target.metadata.labels[input.parameters.label],"\-\-.*"])
               not re_match(regex, secretrefs)
               msg := sprintf("Data From key %v not allowed in Namespace %v",[secretrefs, namespace])
             }
@@ -64,7 +64,7 @@ spec:
               namespace := input.review.object.metadata.namespace
               secretrefs := input.review.object.spec.data[_].remoteRef.key
               target := data.inventory.cluster["v1"]["Namespace"][namespace]
-              regex := concat("", ["^",target.metadata.labels[input.parameters.label],".*"])
+              regex := concat("", ["^",target.metadata.labels[input.parameters.label],"\-\-.*"])
               not re_match(regex, secretrefs)
               msg := sprintf("Data key remote ref %v not allowed in namespace %v",[secretrefs, namespace])
             }
